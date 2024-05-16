@@ -23,7 +23,7 @@ function Button({ children, onClick }) {
 // ---------
 
 // Replace this with your own App ID from https://instantdb.com/dash
-const APP_ID = 'REPLACE_ME'
+const APP_ID = 'b81d1f91-431e-4980-8e96-2a75f7c84cce'
 
 // Initialize connection to InstantDB app
 const db = init({ appId: APP_ID })
