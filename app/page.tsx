@@ -1,6 +1,7 @@
 'use client'
 
-import { init } from '@instantdb/react'
+import { init, tx, id } from '@instantdb/react'
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 import { useState, useRef } from 'react'
 
@@ -43,7 +44,14 @@ function App() {
   const { messages } = data
 
   const onSubmit = () => {
+    console.log(inputRef.current.value)
     console.log("(TODO): Add message")
+    db.transact(
+      tx.messages[id()].update({
+        text: inputRef.current.value,
+        createdAt: Date.now(),
+      })
+    )
   }
 
   const onKeyDown = (e: any) => {
@@ -55,6 +63,7 @@ function App() {
 
   return (
     <div className='p-4 space-y-6 w-full sm:w-[640px] mx-auto'>
+      <LoginButton />
       <h1 className='text-2xl font-bold'>Logged in as: (TODO) Implement auth</h1>
       <div className="flex flex-col space-y-2">
         <div className="flex justify-between border-b border-b-gray-500 pb-2 space-x-2">
@@ -83,7 +92,8 @@ function App() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
-                  console.log("(TODO) Implement update message")
+                  // console.log(e.target[0].value)
+                  db.transact(tx.messages[message.id].update({ text: e.target[0].value }))
                   setEditId(null)
                 }}
               >
@@ -98,7 +108,13 @@ function App() {
                 <p>(TODO) Show message author: {message.text}</p>
                 <span className="space-x-4">
                   <Button onClick={() => setEditId(message.id)}>Edit</Button>
-                  <Button onClick={() => console.log("(TODO) Implement delete message")}>Delete</Button>
+                  <Button onClick={() => {
+                    console.log("(TODO) Implement delete message")
+                    // db.transact(tx.todos[todo.id].delete())
+                    db.transact(
+                      tx.messages[message.id].delete()
+                    )
+                  }}>Delete</Button>
                 </span>
               </div>
             )}
@@ -106,9 +122,47 @@ function App() {
         ))}
       </div>
       <div className="border-b border-b-gray-300 pb-2">(TODO) Who's online:</div>
-      <Button onClick={() => console.log("(TODO) Implement delete all")}>Delete All</Button>
+      <Button onClick={() => {
+        console.log("(TODO) Implement delete all")
+        db.transact(
+          // goals.map(g => tx.goals[g.id].delete())
+          messages.map(m => tx.messages[m.id].delete())
+        )
+      }}>Delete All</Button>
     </div>
   )
+}
+
+// e.g. 89602129-cuf0j.apps.googleusercontent.com
+const GOOGLE_CLIENT_ID = '921259245874-pcm05ifilbfce4gk36k1l3sl4m38d159.apps.googleusercontent.com';
+
+// Use the google client name in the Instant dashboard auth tab
+const GOOGLE_CLIENT_NAME = 'Instant Demo 0516';
+
+function LoginButton() {
+  const [nonce] = useState(crypto.randomUUID());
+
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <GoogleLogin
+        nonce={nonce}
+        onError={() => alert('Login failed')}
+        onSuccess={({ credential }) => {
+          db.auth
+            .signInWithIdToken({
+              clientName: GOOGLE_CLIENT_NAME,
+              idToken: credential,
+              // Make sure this is the same nonce you passed as a prop
+              // to the GoogleLogin button
+              nonce,
+            })
+            .catch((err) => {
+              alert('Uh oh: ' + err.body?.message);
+            });
+        }}
+      />
+    </GoogleOAuthProvider>
+  );
 }
 
 export default App
